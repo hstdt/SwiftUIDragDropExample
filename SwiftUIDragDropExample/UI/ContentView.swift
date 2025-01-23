@@ -8,9 +8,24 @@
 import SwiftUI
 import Collections
 
-enum SampleType: String, CaseIterable, Identifiable {
+enum SampleSection: String, CaseIterable, Hashable {
+    case dragdrop = "Drag Drop"
+    case dragGesture = "DragGesture"
+    var samples: [Sample] {
+        switch self {
+        case .dragdrop:
+            [.plainReorder, .groupdReorder]
+        case .dragGesture:
+            [.absolutedragGesture, .relativedragGesture]
+        }
+    }
+}
+
+enum Sample: String, Identifiable, Hashable {
     case plainReorder = "Plain Reorder"
     case groupdReorder = "Grouped Reorder"
+    case absolutedragGesture = "Absolute Drag Gesture"
+    case relativedragGesture = "Relative Drag Gesture"
 
     var id: String { rawValue }
 
@@ -22,20 +37,31 @@ enum SampleType: String, CaseIterable, Identifiable {
             PlainReorderSampleView()
         case .groupdReorder:
             GroupedReorderSampleView()
+        case .absolutedragGesture:
+            AbsolutePositionDragSampleView()
+        case .relativedragGesture:
+            RelativePositionDragSampleView()
         }
     }
 }
 
 struct ContentView: View {
-    @State private var destination: SampleType?
+    @State private var destination: Sample?
 
     var body: some View {
         NavigationSplitView {
-            List(SampleType.allCases, id: \.id, selection: $destination) { type in
-                NavigationLink(value: type) {
-                    Text(type.rawValue)
+            List(selection: $destination) {
+                ForEach(SampleSection.allCases, id: \.self) { section in
+                    Section {
+                        ForEach(section.samples, id: \.self) { sample in
+                            NavigationLink(value: sample) {
+                                Text(sample.rawValue)
+                            }
+                        }
+                    } header: {
+                        Text(section.rawValue)
+                    }
                 }
-                .tag(type.id)
             }
             .navigationTitle("Samples")
         } detail: {
