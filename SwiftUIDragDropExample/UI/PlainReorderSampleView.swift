@@ -8,10 +8,12 @@
 import SwiftUI
 
 struct PlainReorderSampleView: View {
-
+    @State private var columnCount = 3
+#if !os(macOS)
+    @State private var showDragPreview: Bool = true
+#endif
     @State private var data: [OceanRegion] = oceanRegions
     @State private var draggingItem: OceanRegion?
-    @State private var columnCount = 3
     @State private var dropType: DropImplementionType = .dropDelegate
 
     enum DropImplementionType: CaseIterable, Sendable, Hashable {
@@ -32,6 +34,10 @@ struct PlainReorderSampleView: View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack {
                 Stepper(value: $columnCount, in: 1...5, step: 1) { Text("columnCount:\(columnCount.formatted())") }
+#if !os(macOS)
+                Toggle(isOn: $showDragPreview) {  Text("showDragPreview") }
+                    .padding(.horizontal)
+#endif
                 Picker(dropType.name, selection: $dropType) {
                     ForEach(DropImplementionType.allCases, id: \.self) {
                         Text($0.name).tag($0)
@@ -64,10 +70,18 @@ struct PlainReorderSampleView: View {
 #else
                         if #available(iOS 16, *) {
                             $0.draggable(item) {
-                                row(of: item)
-                                    .onAppear {
-                                        draggingItem = item
+                                ZStack {
+                                    if showDragPreview {
+                                        row(of: item)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .frame(width: 1, height: 1)
+                                            .opacity(0.01)
                                     }
+                                }
+                                .onAppear {
+                                    draggingItem = item
+                                }
                             }
                         } else {
                             $0.onDrag {
@@ -120,4 +134,29 @@ struct PlainReorderSampleView: View {
 
 #Preview {
     PlainReorderSampleView()
+}
+
+struct ContentView1: View {
+    @State private var showDialog = false
+    let options = Array(1...40).map { "Option \($0)" }
+
+    var body: some View {
+        VStack {
+            Button("Show Options") {
+                showDialog = true
+            }
+            .confirmationDialog("Choose an Option", isPresented: $showDialog) {
+                ForEach(options, id: \.self) { option in
+                    Button(option) {
+                        print("\(option) selected")
+                    }
+                }
+                Button("Cancel", role: .cancel) {}
+            }
+        }
+    }
+}
+
+#Preview {
+    ContentView1()
 }

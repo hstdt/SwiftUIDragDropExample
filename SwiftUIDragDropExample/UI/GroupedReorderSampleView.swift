@@ -9,15 +9,23 @@ import SwiftUI
 import Collections
 
 struct GroupedReorderSampleView: View {
-
+#if !os(macOS)
+    @State private var showDragPreview: Bool = true
+#endif
     @State private var data: OrderedDictionary<OceanRegion, [Sea]> = OrderedDictionary(
         uniqueKeysWithValues: oceanRegions.map { ($0, $0.seas) })
     @State private var draggingItem: Sea?
     @State private var draggingGroup: OceanRegion?
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            content
+        VStack(spacing: 0) {
+#if !os(macOS)
+            Toggle(isOn: $showDragPreview) {  Text("showDragPreview") }
+                .padding(.horizontal)
+#endif
+            ScrollView(.vertical, showsIndicators: false) {
+                content
+            }
         }
         .background(Color.orange.mix(with: .cyan, by: 0.3).gradient)
         .navigationTitle("Grouped")
@@ -41,11 +49,19 @@ struct GroupedReorderSampleView: View {
 #else
                         if #available(iOS 16, *) {
                             $0.draggable(group) {
-                                section(of: group)
-                                    .onAppear {
-                                        draggingItem = nil
-                                        draggingGroup = group
+                                ZStack {
+                                    if showDragPreview {
+                                        section(of: group)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .frame(width: 1, height: 1)
+                                            .opacity(0.01)
                                     }
+                                }
+                                .onAppear {
+                                    draggingItem = nil
+                                    draggingGroup = group
+                                }
                             }
                         } else {
                             $0.onDrag {
@@ -76,11 +92,19 @@ struct GroupedReorderSampleView: View {
 #else
                         if #available(iOS 16, *) {
                             $0.draggable(item) {
-                                row(of: item)
-                                    .onAppear {
-                                        draggingItem = item
-                                        draggingGroup = group
+                                ZStack {
+                                    if showDragPreview {
+                                        row(of: item)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 4)
+                                            .frame(width: 1, height: 1)
+                                            .opacity(0.01)
                                     }
+                                }
+                                .onAppear {
+                                    draggingItem = item
+                                    draggingGroup = group
+                                }
                             }
                         } else {
                             $0.onDrag {
